@@ -1,0 +1,536 @@
+<title>Mapping Reported Racism in Canada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: news-desk dashboard. Header + story filters, stat strip, map | cities, timeline, breakdown | incident log, methods. */
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --ink: #12161c; --ink-2: #4a5260; --muted: #737c8a;
+  --line: #e1e5eb; --accent: #2a78d6; --accent-ink: #1c5cab; --accent-soft: #e3eefc; --na: #d8dce2;
+  --seq-0: #cde2fb; --seq-1: #9ec5f4; --seq-2: #6da7ec; --seq-3: #3987e5; --seq-4: #256abf; --seq-5: #184f95; --seq-6: #0d366b;
+  --display: "Newsreader", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1115; --surface: #161a20; --ink: #eef1f5; --ink-2: #b6bfcb; --muted: #8791a0;
+    --line: #29303a; --accent: #4b93e8; --accent-ink: #86b6ef; --accent-soft: #1a2a40; --na: #343b46;
+    --seq-0: #1d3150; --seq-1: #184f95; --seq-2: #1f62b5; --seq-3: #3987e5; --seq-4: #6da7ec; --seq-5: #9ec5f4; --seq-6: #cde2fb;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1115; --surface: #161a20; --ink: #eef1f5; --ink-2: #b6bfcb; --muted: #8791a0;
+  --line: #29303a; --accent: #4b93e8; --accent-ink: #86b6ef; --accent-soft: #1a2a40; --na: #343b46;
+  --seq-0: #1d3150; --seq-1: #184f95; --seq-2: #1f62b5; --seq-3: #3987e5; --seq-4: #6da7ec; --seq-5: #9ec5f4; --seq-6: #cde2fb;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 20px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1.1; }
+h2 { font-size: 1.25rem; }
+p { margin: 0; }
+a { color: var(--accent-ink); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.sub { color: var(--ink-2); max-width: 68ch; }
+
+header { display: grid; gap: 10px; padding-bottom: 4px; }
+.masthead-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 0.85rem; }
+.masthead-meta span::before { content: "■ "; color: var(--accent); font-size: 0.6rem; vertical-align: 2px; }
+
+/* findings */
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
+.finding strong { font-family: var(--display); font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+.finding p { color: var(--ink-2); font-size: 0.88rem; }
+.finding button { justify-self: start; }
+
+/* controls */
+.controls { z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; }
+.field { display: grid; gap: 4px; }
+.field label, .field .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; }
+select, input[type="month"], input[type="search"] {
+  font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; min-height: 36px; max-width: 100%;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 0.82rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 5px 11px; cursor: pointer; min-height: 32px; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn { font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--accent-ink); background: transparent; border: 1px solid var(--accent); border-radius: 7px; padding: 6px 12px; cursor: pointer; min-height: 34px; }
+.btn:hover { background: var(--accent-soft); }
+.btn-ghost { border-color: var(--line); color: var(--ink-2); }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, path:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.active-filter { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; padding: 4px 6px 4px 11px; font-size: 0.82rem; font-weight: 600; }
+.active-filter button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px 6px; }
+
+@media (min-width: 760px) { .controls { position: sticky; top: env(safe-area-inset-top, 0px); } }
+.grid-2b > .panel { align-self: start; }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.stat { padding: 14px 18px; display: grid; gap: 2px; min-width: 0; }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat .value { font-family: var(--mono); font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 500; font-variant-numeric: tabular-nums; }
+.stat .note { color: var(--muted); font-size: 0.8rem; }
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+
+/* panels */
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; }
+.grid-2b { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 20px; }
+@media (max-width: 920px) { .grid-2, .grid-2b { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; }
+.panel-note { color: var(--muted); font-size: 0.8rem; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 0.8rem; border: 0; background: var(--surface); color: var(--ink-2); padding: 6px 11px; cursor: pointer; min-height: 32px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+
+#map svg { width: 100%; height: auto; display: block; }
+#map path.prov { stroke: var(--surface); stroke-width: 0.8; cursor: pointer; transition: opacity 0.15s; }
+#map path.prov:hover { stroke: var(--ink); stroke-width: 1.4; }
+#map path.prov.selected { stroke: var(--ink); stroke-width: 2; }
+#map path.prov.dim { opacity: 0.35; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; font-size: 0.78rem; color: var(--ink-2); }
+.legend .ramp { display: grid; gap: 3px; }
+.legend .ramp-bar { height: 9px; width: 180px; max-width: 50vw; border-radius: 3px; }
+.legend .ramp-ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--na); vertical-align: -2px; margin-right: 6px; }
+
+/* bars */
+.bars { display: grid; gap: 7px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 38%) minmax(0, 1fr); gap: 10px; align-items: center; font-size: 0.86rem; }
+.bar-row .name { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-row .track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.bar-row .fill { height: 14px; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar-row .val { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bar-row.clickable { cursor: pointer; border-radius: 4px; }
+.bar-row.clickable:hover .name { color: var(--ink); text-decoration: underline; }
+.empty { color: var(--muted); font-size: 0.88rem; padding: 18px 0; }
+
+/* timeline */
+#timeline { position: relative; }
+#timeline svg { width: 100%; display: block; overflow: visible; }
+#timeline .axis text { fill: var(--muted); font-family: var(--mono); font-size: 11px; }
+#timeline .axis line, #timeline .axis path { stroke: var(--line); }
+#timeline .grid line { stroke: var(--line); stroke-dasharray: 2 3; }
+.tooltip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 0.8rem; padding: 6px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -110%); opacity: 0; transition: opacity 0.1s; z-index: 3; }
+.tooltip b { font-family: var(--mono); }
+#mapwrap { position: relative; }
+
+/* log */
+.log { display: grid; }
+.log-item { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 14px; padding: 11px 0; border-top: 1px solid var(--line); }
+.log-item .date { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); padding-top: 2px; }
+.log-item a { color: var(--ink); text-decoration: none; font-weight: 500; }
+.log-item a:hover { text-decoration: underline; color: var(--accent-ink); }
+.log-item .meta { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.78rem; color: var(--muted); }
+.tag { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+.tag.crim { border-color: var(--accent); color: var(--accent-ink); }
+.pager { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--muted); }
+@media (max-width: 520px) { .log-item { grid-template-columns: minmax(0, 1fr); } .log-item .meta { grid-column: 1; } }
+
+/* methods */
+.methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+.methods ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 0.88rem; display: grid; gap: 6px; }
+footer { color: var(--muted); font-size: 0.8rem; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Canada · January 2018 to June 2020</span>
+    <h1>Mapping Reported Racism in Canada</h1>
+    <p class="sub">1,000 racist and identity-based incidents covered by Canadian news media. Filter by time, community and outcome, click a province to focus on it, and open any incident's source article.</p>
+    <div class="masthead-meta">
+      <span>Media-reported incidents, not official crime statistics</span>
+      <span>Rates use 2021 Census population</span>
+    </div>
+  </header>
+
+  <section class="findings" aria-label="Key findings">
+    <div class="finding">
+      <span class="eyebrow">Per capita</span>
+      <strong>Nova Scotia's rate is 2.6× Ontario's</strong>
+      <p>Ontario has the most incidents (363), but at 6.8 per 100,000 residents Nova Scotia has the highest rate of any province with 10 or more.</p>
+      <button class="btn" data-story="rate">Show rates on the map</button>
+    </div>
+    <div class="finding">
+      <span class="eyebrow">2019 federal election</span>
+      <strong>October 2019 had 2.7× the usual monthly count</strong>
+      <p>91 incidents that month; 43 of them happened in a political context.</p>
+      <button class="btn" data-story="election">Focus on fall 2019</button>
+    </div>
+    <div class="finding">
+      <span class="eyebrow">Start of COVID-19</span>
+      <strong>Anti-East-Asian incidents rose 3.6×</strong>
+      <p>From 1.7 a month in 2018–2019 to 6.2 a month in January–June 2020.</p>
+      <button class="btn" data-story="covid">Show East Asian incidents</button>
+    </div>
+  </section>
+
+  <section class="controls" aria-label="Filters">
+    <div class="field"><label for="from">From</label><input type="month" id="from"></div>
+    <div class="field"><label for="to">To</label><input type="month" id="to"></div>
+    <div class="field"><label for="community">Targeted community</label><select id="community"></select></div>
+    <div class="field"><span class="lbl" id="cat-lbl">Outcome</span><div class="chips" id="cats" role="group" aria-labelledby="cat-lbl"></div></div>
+    <div class="field" id="prov-filter-wrap" hidden><span class="lbl">Province</span><span class="active-filter" id="prov-filter"></span></div>
+    <button class="btn btn-ghost" id="reset" type="button">Reset</button>
+  </section>
+
+  <section class="stats" aria-label="Summary">
+    <div class="stat"><span class="eyebrow">Incidents</span><span class="value" id="s-n">–</span><span class="note" id="s-n-note"></span></div>
+    <div class="stat"><span class="eyebrow">Non-criminal</span><span class="value" id="s-nc">–</span><span class="note">harassment, speech, profiling</span></div>
+    <div class="stat"><span class="eyebrow">Led to charges</span><span class="value" id="s-ch">–</span><span class="note">of incidents shown</span></div>
+    <div class="stat"><span class="eyebrow">Busiest month</span><span class="value" id="s-pk">–</span><span class="note" id="s-pk-note"></span></div>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="map-h">
+      <div class="panel-head">
+        <h2 id="map-h">Where incidents were reported</h2>
+        <div class="seg" role="group" aria-label="Map measure">
+          <button type="button" data-metric="rate" aria-pressed="true">Per 100k residents</button>
+          <button type="button" data-metric="count" aria-pressed="false">Count</button>
+        </div>
+      </div>
+      <div id="mapwrap"><div id="map"></div><div class="tooltip" id="map-tip"></div></div>
+      <div class="legend" id="legend"></div>
+      <p class="panel-note">Click a province to filter the whole page. In the rate view, areas with fewer than 10 incidents are grey: a handful of cases over a small population gives a misleading rate.</p>
+    </section>
+    <section class="panel" aria-labelledby="city-h">
+      <div class="panel-head"><h2 id="city-h">Top cities</h2></div>
+      <div class="bars" id="cities"></div>
+      <p class="panel-note" id="city-note"></p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="tl-h">
+    <div class="panel-head">
+      <h2 id="tl-h">Incidents per month</h2>
+      <span class="panel-note">Data end 26 June 2020, so compare months rather than calendar years.</span>
+    </div>
+    <div id="timeline"><div class="tooltip" id="tl-tip"></div></div>
+  </section>
+
+  <div class="grid-2b">
+    <section class="panel" aria-labelledby="bd-h">
+      <div class="panel-head">
+        <h2 id="bd-h">What kind of incidents</h2>
+        <select id="breakdown" aria-label="Break down by">
+          <option value="t">Type of incident</option>
+          <option value="c">Context</option>
+          <option value="d">Identity targeted</option>
+          <option value="g">Targeted community</option>
+        </select>
+      </div>
+      <div class="bars" id="bars"></div>
+      <p class="panel-note" id="bars-note"></p>
+    </section>
+    <section class="panel" aria-labelledby="log-h">
+      <div class="panel-head">
+        <h2 id="log-h">Incident log</h2>
+        <input type="search" id="search" placeholder="Search headlines or cities" aria-label="Search incidents">
+      </div>
+      <div class="log" id="log"></div>
+      <div class="pager"><button class="btn btn-ghost" id="prev" type="button">Newer</button><span id="page-info" class="num"></span><button class="btn btn-ghost" id="next" type="button">Older</button></div>
+    </section>
+  </div>
+
+  <section class="panel methods" aria-label="Methods and limitations">
+    <div>
+      <h2>How the numbers are built</h2>
+      <ul>
+        <li>Incident type, context, identity and community can each hold several labels; every label is counted once per incident, so breakdown bars can add up to more than the total.</li>
+        <li>Provincial rates divide incidents by Statistics Canada 2021 Census population.</li>
+        <li>Missing province and city values are kept as "Not specified" rather than dropped.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Read with care</h2>
+      <ul>
+        <li><b>Media-reported.</b> An incident is here only if the news covered it, so spikes also reflect news attention.</li>
+        <li><b>English-language sources.</b> None of the articles come from French-language outlets, so Quebec is very likely under-counted.</li>
+        <li><b>Sparse fields.</b> Victim gender is missing for 65% of incidents and province for 6%.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>Built by Salha Qahl</span>
+    <span>Code and cleaning scripts: <a href="https://github.com/SallyQahl/canada-racism-incidents" target="_blank" rel="noopener">GitHub</a></span>
+    <span>Boundaries: click_that_hood (Code for Germany)</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("data").textContent);
+  D.dicts.d = D.dicts.d.map(x => x === "Other" ? "Other religious" : x);
+  const C = { date: 0, prov: 1, city: 2, cat: 3, t: 4, c: 5, d: 6, g: 7, desc: 8, url: 9 };
+  const rows = D.rows.map(r => ({ ...r, ym: r[0] ? r[0].slice(0, 7) : null }));
+  const months = [...new Set(rows.filter(r => r.ym).map(r => r.ym))].sort();
+  const FIRST = months[0], LAST = months[months.length - 1];
+  const NONCRIM = D.cats.indexOf("Non-Criminal"), CHARGED = D.cats.indexOf("Criminal: Charged");
+  const NOTSPEC = D.provs.indexOf("Not specified");
+  const catLabel = { "Criminal: Charged": "Charged", "Criminal: Not charged": "Not charged", "Criminal: Unknown": "Criminal, outcome unknown", "Non-Criminal": "Non-criminal" };
+  const EVENTS = [{ ym: "2019-10", label: "Federal election" }, { ym: "2020-03", label: "COVID-19 pandemic declared" }];
+  const fmtMonth = ym => { const [y, m] = ym.split("-"); return new Date(+y, +m - 1, 1).toLocaleString("en-CA", { month: "short", year: "numeric" }); };
+  const pct = x => isFinite(x) ? Math.round(x * 100) + "%" : "–";
+
+  const S = { from: FIRST, to: LAST, community: -1, cats: new Set(D.cats.map((_, i) => i)), prov: null, metric: "rate", breakdown: "t", search: "", page: 0 };
+  const $ = id => document.getElementById(id);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  // ---- controls ---------------------------------------------------------------
+  const fromEl = $("from"), toEl = $("to");
+  [fromEl, toEl].forEach(el => { el.min = FIRST; el.max = LAST; });
+  const commEl = $("community");
+  commEl.innerHTML = `<option value="-1">All communities</option>` + D.dicts.g.map((g, i) => `<option value="${i}">${g}</option>`).join("");
+  $("cats").innerHTML = D.cats.map((c, i) => `<button type="button" class="chip" data-cat="${i}" aria-pressed="true">${catLabel[c] || c}</button>`).join("");
+
+  function syncControls() {
+    fromEl.value = S.from; toEl.value = S.to; commEl.value = S.community;
+    document.querySelectorAll("#cats .chip").forEach(b => b.setAttribute("aria-pressed", S.cats.has(+b.dataset.cat)));
+    document.querySelectorAll("[data-metric]").forEach(b => b.setAttribute("aria-pressed", b.dataset.metric === S.metric));
+    $("breakdown").value = S.breakdown;
+    $("prov-filter-wrap").hidden = S.prov === null;
+    if (S.prov !== null) $("prov-filter").innerHTML = `${S.prov}<button type="button" aria-label="Clear province filter">×</button>`;
+  }
+  fromEl.addEventListener("change", () => { S.from = fromEl.value || FIRST; if (S.from > S.to) S.to = S.from; update(); });
+  toEl.addEventListener("change", () => { S.to = toEl.value || LAST; if (S.to < S.from) S.from = S.to; update(); });
+  commEl.addEventListener("change", () => { S.community = +commEl.value; update(); });
+  $("cats").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    const i = +b.dataset.cat; S.cats.has(i) ? S.cats.delete(i) : S.cats.add(i); update();
+  });
+  document.querySelectorAll("[data-metric]").forEach(b => b.addEventListener("click", () => { S.metric = b.dataset.metric; update(); }));
+  $("breakdown").addEventListener("change", e => { S.breakdown = e.target.value; update(); });
+  $("prov-filter").addEventListener("click", e => { if (e.target.closest("button")) { S.prov = null; update(); } });
+  $("reset").addEventListener("click", () => reset());
+  $("search").addEventListener("input", e => { S.search = e.target.value.trim().toLowerCase(); S.page = 0; renderLog(); });
+  $("prev").addEventListener("click", () => { S.page = Math.max(0, S.page - 1); renderLog(); });
+  $("next").addEventListener("click", () => { S.page++; renderLog(); });
+
+  function reset() { Object.assign(S, { from: FIRST, to: LAST, community: -1, cats: new Set(D.cats.map((_, i) => i)), prov: null, page: 0 }); update(); }
+
+  document.querySelectorAll("[data-story]").forEach(b => b.addEventListener("click", () => {
+    reset();
+    const k = b.dataset.story;
+    if (k === "rate") { S.metric = "rate"; update(); $("map-h").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+    if (k === "election") { S.from = "2019-08"; S.to = "2019-12"; S.breakdown = "c"; }
+    if (k === "covid") { S.community = D.dicts.g.indexOf("East Asian"); S.breakdown = "t"; }
+    update();
+    $("tl-h").scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
+
+  // ---- filtering ----------------------------------------------------------------
+  const fullRange = () => S.from === FIRST && S.to === LAST;
+  function filtered({ ignoreProv = false } = {}) {
+    return rows.filter(r =>
+      (r.ym ? (r.ym >= S.from && r.ym <= S.to) : fullRange()) &&
+      S.cats.has(r[C.cat]) &&
+      (S.community < 0 || r[C.g].includes(S.community)) &&
+      (ignoreProv || S.prov === null || D.provs[r[C.prov]] === S.prov));
+  }
+
+  // ---- stats -------------------------------------------------------------------------
+  function renderStats(f) {
+    $("s-n").textContent = f.length.toLocaleString("en-CA");
+    $("s-n-note").textContent = `${fmtMonth(S.from)} to ${fmtMonth(S.to)}${S.prov ? " · " + S.prov : ""}`;
+    $("s-nc").textContent = f.length ? pct(f.filter(r => r[C.cat] === NONCRIM).length / f.length) : "–";
+    $("s-ch").textContent = f.length ? pct(f.filter(r => r[C.cat] === CHARGED).length / f.length) : "–";
+    const byM = d3.rollups(f.filter(r => r.ym), v => v.length, r => r.ym).sort((a, b) => b[1] - a[1]);
+    $("s-pk").textContent = byM.length ? fmtMonth(byM[0][0]) : "–";
+    $("s-pk-note").textContent = byM.length ? `${byM[0][1]} incidents` : "";
+  }
+
+  // ---- map --------------------------------------------------------------------------------
+  const mapTip = $("map-tip");
+  function renderMap() {
+    const f = filtered({ ignoreProv: true });
+    const counts = d3.rollup(f, v => v.length, r => D.provs[r[C.prov]]);
+    const feats = D.geo.features.map(ft => {
+      const n = counts.get(ft.properties.name) || 0;
+      return { ft, name: ft.properties.name, n, rate: n / ft.properties.pop * 1e5 };
+    });
+    const isRate = S.metric === "rate";
+    const val = d => isRate ? d.rate : d.n;
+    const hidden = d => isRate && d.n < 10;
+    const shown = feats.filter(d => !hidden(d)).map(val);
+    const max = d3.max(shown) || 1;
+    const ramp = [0, 1, 2, 3, 4, 5, 6].map(i => css(`--seq-${i}`));
+    const color = d3.scaleQuantize().domain([0, max]).range(ramp);
+
+    const W = $("map").clientWidth || 700, H = Math.round(W * 0.78);
+    const proj = d3.geoConicConformal().parallels([49, 77]).rotate([96, 0]).fitExtent([[4, 4], [W - 4, H - 4]], D.geo);
+    const path = d3.geoPath(proj);
+    const svg = d3.select("#map").selectAll("svg").data([0]).join("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Map of Canada by province");
+    svg.selectAll("path.prov").data(feats, d => d.name).join("path")
+      .attr("class", d => "prov" + (S.prov === d.name ? " selected" : "") + (S.prov && S.prov !== d.name ? " dim" : ""))
+      .attr("d", d => path(d.ft))
+      .attr("fill", d => hidden(d) ? css("--na") : (d.n === 0 ? css("--seq-0") : color(val(d))))
+      .attr("tabindex", 0)
+      .attr("aria-label", d => `${d.name}: ${d.n} incidents, ${d.rate.toFixed(1)} per 100,000`)
+      .on("mousemove", (e, d) => {
+        const r = $("mapwrap").getBoundingClientRect();
+        mapTip.innerHTML = `${d.name}<br><b>${d.n}</b> incidents · <b>${d.rate.toFixed(1)}</b> per 100k${d.n < 10 ? "<br>Too few for a stable rate" : ""}`;
+        mapTip.style.left = (e.clientX - r.left) + "px"; mapTip.style.top = (e.clientY - r.top) + "px"; mapTip.style.opacity = 1;
+      })
+      .on("mouseleave", () => mapTip.style.opacity = 0)
+      .on("click", (e, d) => { S.prov = S.prov === d.name ? null : d.name; S.page = 0; update(); })
+      .on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); S.prov = S.prov === d.name ? null : d.name; update(); } });
+    svg.selectAll("path.prov.selected").raise();
+
+    const fmt = v => isRate ? v.toFixed(1) : Math.round(v);
+    const anyHidden = feats.some(hidden);
+    $("legend").innerHTML =
+      `<div class="ramp"><span>${isRate ? "Incidents per 100,000 residents" : "Incidents"}</span>
+        <div class="ramp-bar" style="background:linear-gradient(90deg,${ramp.join(",")})"></div>
+        <div class="ramp-ticks"><span>0</span><span>${fmt(max / 2)}</span><span>${fmt(max)}</span></div></div>` +
+      (anyHidden ? `<span><span class="sw"></span>Fewer than 10 incidents</span>` : "");
+  }
+
+  // ---- bars ------------------------------------------------------------------------------------
+  function bars(el, data, { onClick } = {}) {
+    if (!data.length) { el.innerHTML = `<p class="empty">No incidents match these filters.</p>`; return; }
+    const max = d3.max(data, d => d[1]);
+    el.innerHTML = data.map(([k, v]) =>
+      `<div class="bar-row${onClick ? " clickable" : ""}" data-key="${k}" ${onClick ? 'role="button" tabindex="0"' : ""} title="${k}: ${v}">
+        <span class="name">${k}</span>
+        <span class="track"><span class="fill" style="width:${(v / max * 82).toFixed(1)}%"></span><span class="val">${v}</span></span>
+      </div>`).join("");
+    if (onClick) el.querySelectorAll(".bar-row").forEach(row => {
+      row.addEventListener("click", () => onClick(row.dataset.key));
+      row.addEventListener("keydown", e => { if (e.key === "Enter") onClick(row.dataset.key); });
+    });
+  }
+  function renderCities(f) {
+    const named = f.filter(r => r[C.city] !== "Not specified");
+    const data = d3.rollups(named, v => v.length, r => r[C.city]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12);
+    bars($("cities"), data);
+    const miss = f.length - named.length;
+    $("city-note").textContent = miss ? `${miss} incident${miss === 1 ? "" : "s"} in this view have no city recorded.` : "";
+  }
+  function renderBreakdown(f) {
+    const k = S.breakdown, idx = C[k], dict = D.dicts[k];
+    const counts = new Map();
+    let unlabelled = 0;
+    f.forEach(r => { if (!r[idx].length) unlabelled++; r[idx].forEach(i => counts.set(dict[i], (counts.get(dict[i]) || 0) + 1)); });
+    const data = [...counts].sort((a, b) => b[1] - a[1]);
+    bars($("bars"), data, k === "g" ? { onClick: key => { S.community = D.dicts.g.indexOf(key); update(); } } : {});
+    $("bars-note").textContent = (k === "g" ? "Click a community to filter by it. " : "") +
+      (unlabelled ? `${unlabelled} incident${unlabelled === 1 ? " has" : "s have"} no label for this field.` : "");
+  }
+
+  // ---- timeline -------------------------------------------------------------------------------
+  const tlTip = $("tl-tip");
+  function renderTimeline(f) {
+    const host = $("timeline");
+    const span = months.filter(m => m >= S.from && m <= S.to);
+    const counts = d3.rollup(f.filter(r => r.ym), v => v.length, r => r.ym);
+    const data = span.map(m => ({ m, d: new Date(+m.slice(0, 4), +m.slice(5) - 1, 1), n: counts.get(m) || 0 }));
+    const W = host.clientWidth || 900, H = W < 520 ? 230 : 280, M = { t: 26, r: 14, b: 26, l: 34 };
+    const x = d3.scaleTime().domain(d3.extent(data, d => d.d)).range([M.l, W - M.r]);
+    const y = d3.scaleLinear().domain([0, Math.max(5, d3.max(data, d => d.n))]).nice().range([H - M.b, M.t]);
+    const svg = d3.select(host).selectAll("svg").data([0]).join("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H)
+      .attr("role", "img").attr("aria-label", "Line chart of incidents per month");
+    svg.selectAll("*").remove();
+    const accent = css("--accent"), muted = css("--muted"), ink2 = css("--ink-2");
+    svg.append("g").attr("class", "grid").attr("transform", `translate(${M.l},0)`)
+      .call(d3.axisLeft(y).ticks(4).tickSize(-(W - M.l - M.r)).tickFormat("")).call(g => g.select(".domain").remove());
+    svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - M.b})`)
+      .call(d3.axisBottom(x).ticks(W < 520 ? 4 : 8).tickFormat(d3.timeFormat(data.length > 14 ? "%b %Y" : "%b")).tickSizeOuter(0));
+    svg.append("g").attr("class", "axis").attr("transform", `translate(${M.l},0)`)
+      .call(d3.axisLeft(y).ticks(4).tickSize(0).tickPadding(6)).call(g => g.select(".domain").remove());
+
+    const avg = d3.mean(data, d => d.n);
+    if (data.length > 3) {
+      svg.append("line").attr("x1", M.l).attr("x2", W - M.r).attr("y1", y(avg)).attr("y2", y(avg))
+        .attr("stroke", muted).attr("stroke-dasharray", "4 4");
+      svg.append("text").attr("x", M.l + 4).attr("y", y(avg) - 5).attr("fill", muted).attr("font-size", 11).text(`average ${avg.toFixed(0)}/month`);
+    }
+    EVENTS.filter(e => e.ym >= S.from && e.ym <= S.to).forEach((e, i) => {
+      const ex = x(new Date(+e.ym.slice(0, 4), +e.ym.slice(5) - 1, 1));
+      svg.append("line").attr("x1", ex).attr("x2", ex).attr("y1", M.t - 14 + i * 14).attr("y2", H - M.b).attr("stroke", muted).attr("stroke-dasharray", "2 3");
+      svg.append("text").attr("x", ex + 5).attr("y", M.t - 4 + i * 14).attr("fill", ink2).attr("font-size", 11)
+        .attr("text-anchor", ex > W - 170 ? "end" : "start").attr("dx", ex > W - 170 ? -10 : 0).text(e.label);
+    });
+    if (data.length === 1) {
+      svg.append("circle").attr("cx", (M.l + W - M.r) / 2).attr("cy", y(data[0].n)).attr("r", 5).attr("fill", accent);
+    } else {
+      svg.append("path").datum(data).attr("fill", "none").attr("stroke", accent).attr("stroke-width", 2)
+        .attr("d", d3.line().x(d => x(d.d)).y(d => y(d.n)));
+    }
+    const peak = data.reduce((a, b) => b.n > a.n ? b : a, data[0]);
+    if (peak && peak.n > 0 && data.length > 1) {
+      svg.append("circle").attr("cx", x(peak.d)).attr("cy", y(peak.n)).attr("r", 4.5).attr("fill", accent).attr("stroke", css("--surface")).attr("stroke-width", 2);
+      svg.append("text").attr("x", x(peak.d) + (x(peak.d) > W - 80 ? -8 : 8)).attr("y", y(peak.n) + 4).attr("text-anchor", x(peak.d) > W - 80 ? "end" : "start")
+        .attr("fill", css("--ink")).attr("font-size", 12).attr("font-weight", 600).text(peak.n);
+    }
+    const cross = svg.append("line").attr("y1", M.t).attr("y2", H - M.b).attr("stroke", muted).attr("opacity", 0);
+    const dot = svg.append("circle").attr("r", 4).attr("fill", accent).attr("opacity", 0);
+    svg.append("rect").attr("x", M.l).attr("y", M.t).attr("width", W - M.l - M.r).attr("height", H - M.t - M.b).attr("fill", "transparent")
+      .on("mousemove", e => {
+        const [mx] = d3.pointer(e);
+        const t = x.invert(mx);
+        const d = data.reduce((a, b) => Math.abs(b.d - t) < Math.abs(a.d - t) ? b : a, data[0]);
+        const px = x(d.d) || (M.l + W - M.r) / 2;
+        cross.attr("x1", px).attr("x2", px).attr("opacity", 0.6);
+        dot.attr("cx", px).attr("cy", y(d.n)).attr("opacity", 1);
+        const scale = host.clientWidth / W;
+        tlTip.innerHTML = `${fmtMonth(d.m)}<br><b>${d.n}</b> incident${d.n === 1 ? "" : "s"}`;
+        tlTip.style.left = (px * scale) + "px"; tlTip.style.top = (y(d.n) * scale) + "px"; tlTip.style.opacity = 1;
+      })
+      .on("mouseleave", () => { cross.attr("opacity", 0); dot.attr("opacity", 0); tlTip.style.opacity = 0; });
+  }
+
+  // ---- log ---------------------------------------------------------------------------------------
+  const PAGE = 8;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function renderLog() {
+    let f = filtered().slice().sort((a, b) => (b[C.date] || "").localeCompare(a[C.date] || ""));
+    if (S.search) f = f.filter(r => (r[C.desc] + " " + r[C.city] + " " + D.provs[r[C.prov]]).toLowerCase().includes(S.search));
+    const pages = Math.max(1, Math.ceil(f.length / PAGE));
+    S.page = Math.min(S.page, pages - 1);
+    const slice = f.slice(S.page * PAGE, S.page * PAGE + PAGE);
+    $("log").innerHTML = slice.length ? slice.map(r => {
+      const cat = D.cats[r[C.cat]];
+      const comm = r[C.g].map(i => D.dicts.g[i]).join(", ");
+      const place = [r[C.city] !== "Not specified" ? r[C.city] : null, D.provs[r[C.prov]] !== "Not specified" ? D.provs[r[C.prov]] : null].filter(Boolean).join(", ") || "Location not specified";
+      return `<article class="log-item">
+        <span class="date">${r[C.date] || "No date"}</span>
+        <a href="${esc(r[C.url])}" target="_blank" rel="noopener">${esc(r[C.desc] || "Untitled article")}</a>
+        <div class="meta"><span>${esc(place)}</span><span class="tag${cat.startsWith("Criminal") ? " crim" : ""}">${catLabel[cat] || cat}</span>${comm ? `<span>${esc(comm)}</span>` : ""}</div>
+      </article>`;
+    }).join("") : `<p class="empty">No incidents match these filters.</p>`;
+    $("page-info").textContent = f.length ? `${S.page * PAGE + 1}–${Math.min(f.length, (S.page + 1) * PAGE)} of ${f.length}` : "0 of 0";
+    $("prev").disabled = S.page === 0; $("next").disabled = S.page >= pages - 1;
+  }
+
+  // ---- orchestrate ---------------------------------------------------------------------------------
+  function update() {
+    syncControls();
+    const f = filtered();
+    renderStats(f); renderMap(); renderCities(f); renderTimeline(f); renderBreakdown(f);
+    S.page = 0; renderLog();
+  }
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const f = filtered(); renderMap(); renderTimeline(f); }, 150); });
+  const rerender = () => { const f = filtered(); renderMap(); renderTimeline(f); };
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender);
+  new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  update();
+})();
+</script>
